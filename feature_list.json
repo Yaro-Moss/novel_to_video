@@ -1,0 +1,962 @@
+{
+  "features": [
+    {
+      "id": "FEAT-001",
+      "category": "infrastructure",
+      "title": "项目骨架搭建 - 后端 FastAPI 初始化",
+      "description": "创建 FastAPI 后端项目目录结构，配置依赖管理，设置开发服务器",
+      "acceptance_criteria": [
+        "目录结构包含：app/, app/api/, app/models/, app/schemas/, app/services/, app/workers/, app/core/",
+        "requirements.txt 包含 FastAPI/Uvicorn/SQLAlchemy/Celery/Redis 等核心依赖",
+        "能运行 uvicorn app.main:app --reload 启动开发服务器",
+        "访问 /docs 能看到 Swagger UI"
+      ],
+      "test_command": "uvicorn app.main:app --host 0.0.0.0 --port 8000 & sleep 3 && curl -s http://localhost:8000/docs | head -5",
+      "priority": 1,
+      "passes": true
+    },
+    {
+      "id": "FEAT-002",
+      "category": "infrastructure",
+      "title": "项目骨架搭建 - 前端 React + Vite 初始化",
+      "description": "创建 React + TypeScript + Vite 前端项目，配置 TailwindCSS 和 Ant Design",
+      "acceptance_criteria": [
+        "使用 Vite 创建 React + TypeScript 项目",
+        "配置 TailwindCSS 4.x",
+        "安装并配置 Ant Design 5.x",
+        "npm run dev 能启动开发服务器",
+        "npm run build 能成功构建"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 2,
+      "passes": true
+    },
+    {
+      "id": "FEAT-003",
+      "category": "infrastructure",
+      "title": "数据库设计 - PostgreSQL 模型定义",
+      "description": "使用 SQLAlchemy 定义核心数据模型：User, Project, Task, ApiKey",
+      "acceptance_criteria": [
+        "定义 User 模型（id, username, email, hashed_password, created_at）",
+        "定义 Project 模型（id, user_id, name, input_file, status, config, created_at）",
+        "定义 Task 模型（id, project_id, step_name, status, result, error, celery_task_id）",
+        "定义 ApiKey 模型（id, user_id, provider, encrypted_key, created_at）",
+        "Alembic 迁移脚本能正确创建表"
+      ],
+      "test_command": "python -m pytest tests/test_models.py -v",
+      "priority": 3,
+      "passes": true
+    },
+    {
+      "id": "FEAT-004",
+      "category": "infrastructure",
+      "title": "配置管理 - 后端 Pydantic Settings",
+      "description": "创建后端配置管理模块，支持环境变量和 .env 文件",
+      "acceptance_criteria": [
+        "配置类包含：DATABASE_URL, REDIS_URL, SECRET_KEY, CORS_ORIGINS",
+        "支持 .env 文件加载",
+        "区分开发/测试/生产环境配置",
+        "API 配置项（OpenAI Key, SD WebUI URL）"
+      ],
+      "test_command": "python -c \"from app.core.config import settings; print('Config loaded:', settings.PROJECT_NAME)\"",
+      "priority": 4,
+      "passes": true
+    },
+    {
+      "id": "FEAT-005",
+      "category": "infrastructure",
+      "title": "Docker Compose - 开发环境编排",
+      "description": "创建 docker-compose.yml 编排 PostgreSQL + Redis + 后端 + 前端 + Celery Worker",
+      "acceptance_criteria": [
+        "PostgreSQL 容器正常运行",
+        "Redis 容器正常运行",
+        "后端容器连接数据库和 Redis",
+        "Celery Worker 容器正常运行",
+        "docker-compose up 一键启动所有服务"
+      ],
+      "test_command": "docker-compose up -d && docker-compose ps",
+      "priority": 5,
+      "passes": true
+    },
+    {
+      "id": "FEAT-006",
+      "category": "auth",
+      "title": "用户认证 - 注册 API",
+      "description": "实现用户注册接口 POST /api/v1/auth/register",
+      "acceptance_criteria": [
+        "接收 username, email, password 参数",
+        "密码使用 bcrypt 加密存储",
+        "用户名和邮箱唯一性校验",
+        "返回 JWT access_token 和 refresh_token",
+        "请求参数使用 Pydantic 校验"
+      ],
+      "test_command": "python -m pytest tests/test_auth.py::test_register -v",
+      "priority": 6,
+      "passes": true
+    },
+    {
+      "id": "FEAT-007",
+      "category": "auth",
+      "title": "用户认证 - 登录 API",
+      "description": "实现用户登录接口 POST /api/v1/auth/login",
+      "acceptance_criteria": [
+        "支持 email + password 登录",
+        "验证密码正确性",
+        "返回 JWT token（access + refresh）",
+        "token 过期时间可配置",
+        "登录失败返回 401 和明确错误信息"
+      ],
+      "test_command": "python -m pytest tests/test_auth.py::test_login -v",
+      "priority": 7,
+      "passes": true
+    },
+    {
+      "id": "FEAT-008",
+      "category": "auth",
+      "title": "用户认证 - JWT 中间件和权限守卫",
+      "description": "实现 JWT 认证中间件，保护需要登录的 API",
+      "acceptance_criteria": [
+        "get_current_user 依赖注入函数",
+        "未携带 token 返回 401",
+        "token 过期返回 401",
+        "支持 refresh token 刷新",
+        "获取当前用户信息 GET /api/v1/auth/me"
+      ],
+      "test_command": "python -m pytest tests/test_auth.py::test_protected_route -v",
+      "priority": 8,
+      "passes": true
+    },
+    {
+      "id": "FEAT-009",
+      "category": "auth",
+      "title": "前端 - 登录注册页面",
+      "description": "实现前端登录和注册页面，集成 Ant Design 表单组件",
+      "acceptance_criteria": [
+        "登录页面包含 email 和 password 输入框",
+        "注册页面包含 username, email, password, confirm_password",
+        "表单验证（邮箱格式、密码长度）",
+        "登录成功后存储 token 到 localStorage",
+        "登录成功后跳转到仪表盘页面"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 9,
+      "passes": true
+    },
+    {
+      "id": "FEAT-010",
+      "category": "auth",
+      "title": "前端 - Axios 实例和请求拦截器",
+      "description": "配置 Axios 实例，自动携带 JWT token，处理 401 跳转登录",
+      "acceptance_criteria": [
+        "创建 axios 实例，baseURL 指向后端 API",
+        "请求拦截器自动添加 Authorization header",
+        "响应拦截器处理 401 自动跳转登录页",
+        "支持 token 刷新逻辑",
+        "TypeScript 类型定义完整"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 10,
+      "passes": true
+    },
+    {
+      "id": "FEAT-011",
+      "category": "project",
+      "title": "项目管理 - 创建项目 API",
+      "description": "实现创建项目接口 POST /api/v1/projects，支持上传 TXT 文件",
+      "acceptance_criteria": [
+        "接收项目名称和 TXT 文件上传",
+        "文件保存到本地存储目录",
+        "创建 Project 数据库记录",
+        "返回项目详情（id, name, status, input_file）",
+        "文件大小和格式校验"
+      ],
+      "test_command": "python -m pytest tests/test_projects.py::test_create_project -v",
+      "priority": 11,
+      "passes": true
+    },
+    {
+      "id": "FEAT-012",
+      "category": "project",
+      "title": "项目管理 - 项目列表和详情 API",
+      "description": "实现项目列表 GET /api/v1/projects 和详情 GET /api/v1/projects/{id} 接口",
+      "acceptance_criteria": [
+        "项目列表支持分页（page, page_size）",
+        "只返回当前用户的项目",
+        "项目详情包含所有步骤状态",
+        "支持按状态筛选（pending/processing/completed/failed）",
+        "返回项目创建时间和更新时间"
+      ],
+      "test_command": "python -m pytest tests/test_projects.py::test_list_projects -v",
+      "priority": 12,
+      "passes": true
+    },
+    {
+      "id": "FEAT-013",
+      "category": "project",
+      "title": "项目管理 - 删除项目 API",
+      "description": "实现删除项目接口 DELETE /api/v1/projects/{id}，同时清理关联文件",
+      "acceptance_criteria": [
+        "删除项目数据库记录",
+        "删除关联的音频、图片、视频文件",
+        "如果项目正在处理中，先取消 Celery 任务",
+        "返回 204 No Content",
+        "只能删除自己的项目"
+      ],
+      "test_command": "python -m pytest tests/test_projects.py::test_delete_project -v",
+      "priority": 13,
+      "passes": true
+    },
+    {
+      "id": "FEAT-014",
+      "category": "project",
+      "title": "前端 - 项目列表页面",
+      "description": "实现项目列表页面，展示所有项目卡片，支持筛选和分页",
+      "acceptance_criteria": [
+        "使用 Ant Design Card 展示项目",
+        "显示项目名称、状态、创建时间",
+        "支持按状态筛选（Tabs 组件）",
+        "支持分页加载",
+        "点击项目卡片进入项目详情"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 14,
+      "passes": true
+    },
+    {
+      "id": "FEAT-015",
+      "category": "project",
+      "title": "前端 - 创建项目页面（文件上传）",
+      "description": "实现创建项目页面，支持拖拽上传 TXT 文件",
+      "acceptance_criteria": [
+        "Ant Design Upload 组件支持拖拽上传",
+        "文件类型校验（仅 .txt）",
+        "上传进度条显示",
+        "上传成功后跳转到项目详情页",
+        "表单包含项目名称输入框"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 15,
+      "passes": true
+    },
+    {
+      "id": "FEAT-016",
+      "category": "core",
+      "title": "核心引擎 - 文本导入服务迁移",
+      "description": "将现有 text_import.py 迁移为 FastAPI 服务层，添加文件路径管理",
+      "acceptance_criteria": [
+        "TextImportService 类封装导入逻辑",
+        "支持从上传目录读取文件",
+        "自动编码检测（UTF-8/GBK）",
+        "返回文本内容和元信息（字符数、编码）",
+        "单元测试通过"
+      ],
+      "test_command": "python -m pytest tests/test_text_import_service.py -v",
+      "priority": 16,
+      "passes": true
+    },
+    {
+      "id": "FEAT-017",
+      "category": "core",
+      "title": "核心引擎 - 智能分段服务迁移",
+      "description": "将现有 segmentation.py 迁移为 FastAPI 服务层",
+      "acceptance_criteria": [
+        "SegmentationService 类封装分段逻辑",
+        "支持分段参数配置（min_length, max_length）",
+        "支持章节检测开关",
+        "返回段落列表（id, text, index, chapter_title）",
+        "单元测试通过"
+      ],
+      "test_command": "python -m pytest tests/test_segmentation_service.py -v",
+      "priority": 17,
+      "passes": true
+    },
+    {
+      "id": "FEAT-018",
+      "category": "core",
+      "title": "分段预览 - API 接口",
+      "description": "实现文本分段预览接口 GET /api/v1/projects/{id}/segments",
+      "acceptance_criteria": [
+        "返回分段结果列表",
+        "每段包含：序号、文本内容、字数、章节标题",
+        "支持调整分段参数后重新分段",
+        "分段结果缓存到数据库",
+        "响应时间 < 2s（10000字文本）"
+      ],
+      "test_command": "python -m pytest tests/test_segments_api.py -v",
+      "priority": 18,
+      "passes": true
+    },
+    {
+      "id": "FEAT-019",
+      "category": "core",
+      "title": "前端 - 分段预览页面",
+      "description": "实现分段预览组件，展示分段结果，支持参数调整",
+      "acceptance_criteria": [
+        "使用 Ant Design Collapse 展示各段落",
+        "显示段落序号、字数、章节标题",
+        "支持调整 min_length/max_length 滑块",
+        "调整参数后实时重新分段",
+        "显示总段落数和总字数统计"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 19,
+      "passes": true
+    },
+    {
+      "id": "FEAT-020",
+      "category": "tts",
+      "title": "TTS 服务 - Edge TTS 服务层迁移",
+      "description": "将现有 edge_tts.py 迁移为 FastAPI 服务层，支持批量处理",
+      "acceptance_criteria": [
+        "TTSService 类封装语音合成逻辑",
+        "支持语音选择（男声/女声/自定义）",
+        "支持批量合成和进度回调",
+        "音频文件保存到项目目录",
+        "重试机制和错误处理"
+      ],
+      "test_command": "python -m pytest tests/test_tts_service.py -v",
+      "priority": 20,
+      "passes": true
+    },
+    {
+      "id": "FEAT-021",
+      "category": "tts",
+      "title": "TTS 配置 - 语音选择 API",
+      "description": "实现 TTS 配置接口 GET /api/v1/tts/voices 和预览接口 POST /api/v1/tts/preview",
+      "acceptance_criteria": [
+        "GET /voices 返回可用语音列表（名称、性别、语言）",
+        "POST /preview 接收文本和语音参数，返回试听音频",
+        "试听音频长度限制在 30 秒内",
+        "语音列表缓存 1 小时",
+        "支持按性别和语言筛选"
+      ],
+      "test_command": "python -m pytest tests/test_tts_api.py -v",
+      "priority": 21,
+      "passes": true
+    },
+    {
+      "id": "FEAT-022",
+      "category": "tts",
+      "title": "前端 - TTS 配置面板",
+      "description": "实现 TTS 配置面板组件，支持语音选择和试听",
+      "acceptance_criteria": [
+        "语音选择下拉框（分组：女声/男声）",
+        "试听按钮，点击播放示例音频",
+        "语速调节滑块",
+        "音频播放器组件",
+        "配置保存到项目设置"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 22,
+      "passes": true
+    },
+    {
+      "id": "FEAT-023",
+      "category": "image",
+      "title": "图像生成 - DALL-E 服务层迁移",
+      "description": "将现有 dalle.py 迁移为 FastAPI 服务层",
+      "acceptance_criteria": [
+        "ImageService 类封装图像生成逻辑",
+        "支持 DALL-E 3 API 调用",
+        "支持自定义尺寸、质量、风格",
+        "图片保存到项目目录",
+        "API Key 安全管理"
+      ],
+      "test_command": "python -m pytest tests/test_image_service.py -v",
+      "priority": 23,
+      "passes": true
+    },
+    {
+      "id": "FEAT-024",
+      "category": "image",
+      "title": "图像生成 - Stable Diffusion WebUI 服务层迁移",
+      "description": "将现有 sd_webui.py 迁移为 FastAPI 服务层",
+      "acceptance_criteria": [
+        "SDWebUIService 类封装 SD WebUI 调用",
+        "支持 txt2img 接口",
+        "支持模型切换和参数配置",
+        "连接状态检查",
+        "备选方案自动降级"
+      ],
+      "test_command": "python -m pytest tests/test_sd_webui_service.py -v",
+      "priority": 24,
+      "passes": true
+    },
+    {
+      "id": "FEAT-025",
+      "category": "image",
+      "title": "提示词优化 - 服务层迁移",
+      "description": "将现有 prompt_engineering.py 迁移为 FastAPI 服务层",
+      "acceptance_criteria": [
+        "PromptService 类封装提示词优化逻辑",
+        "支持场景元素提取",
+        "支持中文到英文翻译",
+        "支持风格和构图增强",
+        "预览提示词接口"
+      ],
+      "test_command": "python -m pytest tests/test_prompt_service.py -v",
+      "priority": 25,
+      "passes": true
+    },
+    {
+      "id": "FEAT-026",
+      "category": "image",
+      "title": "前端 - 图像生成配置面板",
+      "description": "实现图像生成配置面板，支持 DALL-E/SD 切换和参数调整",
+      "acceptance_criteria": [
+        "图像引擎切换（DALL-E / SD WebUI）",
+        "DALL-E 参数：尺寸、质量、风格",
+        "SD WebUI 参数：采样器、步数、CFG Scale",
+        "提示词预览和编辑",
+        "单张图片预览生成"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 26,
+      "passes": true
+    },
+    {
+      "id": "FEAT-027",
+      "category": "video",
+      "title": "视频合成 - 视频段合成服务迁移",
+      "description": "将现有 video_segment.py 迁移为 FastAPI 服务层",
+      "acceptance_criteria": [
+        "VideoSegmentService 类封装视频段合成",
+        "支持图片+音频合成视频",
+        "支持淡入淡出效果",
+        "输出 MP4 格式",
+        "合成进度回调"
+      ],
+      "test_command": "python -m pytest tests/test_video_segment_service.py -v",
+      "priority": 27,
+      "passes": true
+    },
+    {
+      "id": "FEAT-028",
+      "category": "video",
+      "title": "视频合成 - 视频拼接服务迁移",
+      "description": "将现有 video_concat.py 迁移为 FastAPI 服务层",
+      "acceptance_criteria": [
+        "VideoConcatService 类封装视频拼接",
+        "支持多段视频按序拼接",
+        "支持 compose 和 chain 方法",
+        "输出最终完整视频",
+        "拼接进度回调"
+      ],
+      "test_command": "python -m pytest tests/test_video_concat_service.py -v",
+      "priority": 28,
+      "passes": true
+    },
+    {
+      "id": "FEAT-029",
+      "category": "video",
+      "title": "字幕生成 - 服务层迁移",
+      "description": "将现有 subtitles.py 迁移为 FastAPI 服务层",
+      "acceptance_criteria": [
+        "SubtitleService 类封装字幕生成逻辑",
+        "支持 SRT 格式生成",
+        "支持字幕烧录到视频",
+        "字幕样式可配置",
+        "时间轴与音频匹配"
+      ],
+      "test_command": "python -m pytest tests/test_subtitle_service.py -v",
+      "priority": 29,
+      "passes": true
+    },
+    {
+      "id": "FEAT-030",
+      "category": "video",
+      "title": "前端 - 视频配置面板",
+      "description": "实现视频合成配置面板，支持字幕样式和转场效果配置",
+      "acceptance_criteria": [
+        "字幕开关和样式配置（字体、大小、颜色、位置）",
+        "淡入淡出时长配置",
+        "字幕预览效果",
+        "视频分辨率选择",
+        "配置保存到项目"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 30,
+      "passes": true
+    },
+    {
+      "id": "FEAT-031",
+      "category": "workflow",
+      "title": "工作流引擎 - Celery 异步任务集成",
+      "description": "将现有 workflow.py 改造为 Celery 异步任务，支持后台执行",
+      "acceptance_criteria": [
+        "WorkflowTask Celery 任务定义",
+        "6 步骤流水线：导入→分段→TTS→图像→视频段→拼接",
+        "任务状态持久化到数据库",
+        "支持断点续传",
+        "Celery Worker 正常运行"
+      ],
+      "test_command": "python -m pytest tests/test_workflow_task.py -v",
+      "priority": 31,
+      "passes": true
+    },
+    {
+      "id": "FEAT-032",
+      "category": "workflow",
+      "title": "工作流引擎 - 启动/取消/重试 API",
+      "description": "实现工作流控制接口：启动、取消、重试",
+      "acceptance_criteria": [
+        "POST /api/v1/projects/{id}/start 启动工作流",
+        "POST /api/v1/projects/{id}/cancel 取消工作流",
+        "POST /api/v1/projects/{id}/retry 重试失败步骤",
+        "启动前验证配置完整性",
+        "同一项目不能重复启动"
+      ],
+      "test_command": "python -m pytest tests/test_workflow_api.py -v",
+      "priority": 32,
+      "passes": true
+    },
+    {
+      "id": "FEAT-033",
+      "category": "workflow",
+      "title": "实时进度 - WebSocket 推送",
+      "description": "实现 WebSocket 实时进度推送，替代 CLI 进度条",
+      "acceptance_criteria": [
+        "WS /api/v1/ws/progress/{project_id} 连接",
+        "推送步骤进度（step_name, percentage, message）",
+        "推送步骤完成/失败通知",
+        "推送 ETA 预估时间",
+        "连接断开自动重连机制"
+      ],
+      "test_command": "python -m pytest tests/test_websocket.py -v",
+      "priority": 33,
+      "passes": true
+    },
+    {
+      "id": "FEAT-034",
+      "category": "workflow",
+      "title": "前端 - Socket.io 实时进度组件",
+      "description": "实现前端 Socket.io 客户端，接收实时进度更新",
+      "acceptance_criteria": [
+        "Socket.io 连接管理（连接/断开/重连）",
+        "进度条组件（步骤进度+总进度）",
+        "步骤状态指示器（pending/running/completed/failed）",
+        "ETA 倒计时显示",
+        "自定义 Hook：useProjectProgress"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 34,
+      "passes": true
+    },
+    {
+      "id": "FEAT-035",
+      "category": "workflow",
+      "title": "前端 - 项目详情页面（工作流仪表盘）",
+      "description": "实现项目详情页面，展示工作流各步骤状态和实时进度",
+      "acceptance_criteria": [
+        "6 步骤状态卡片（Steps 组件）",
+        "当前步骤进度条和详情",
+        "实时日志输出区域",
+        "步骤完成后显示结果预览",
+        "失败步骤显示错误信息和重试按钮"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 35,
+      "passes": true
+    },
+    {
+      "id": "FEAT-036",
+      "category": "result",
+      "title": "结果展示 - 视频播放和下载 API",
+      "description": "实现视频结果播放和下载接口",
+      "acceptance_criteria": [
+        "GET /api/v1/projects/{id}/video 流式返回视频",
+        "GET /api/v1/projects/{id}/video/download 下载视频",
+        "支持 Range 请求（视频拖动播放）",
+        "GET /api/v1/projects/{id}/assets 获取所有产出文件列表",
+        "文件访问权限校验"
+      ],
+      "test_command": "python -m pytest tests/test_result_api.py -v",
+      "priority": 36,
+      "passes": true
+    },
+    {
+      "id": "FEAT-037",
+      "category": "result",
+      "title": "前端 - 视频播放器页面",
+      "description": "实现视频结果播放页面，支持在线播放和下载",
+      "acceptance_criteria": [
+        "Ant Design 视频播放器组件",
+        "播放/暂停/进度控制",
+        "字幕开关",
+        "下载按钮（MP4/SRT）",
+        "产出文件列表（音频/图片/视频段）"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 37,
+      "passes": true
+    },
+    {
+      "id": "FEAT-038",
+      "category": "settings",
+      "title": "API Key 管理 - 加密存储 API",
+      "description": "实现 API Key 安全存储接口，支持 OpenAI Key 等敏感信息加密",
+      "acceptance_criteria": [
+        "POST /api/v1/settings/api-keys 添加 API Key",
+        "GET /api/v1/settings/api-keys 获取 Key 列表（脱敏显示）",
+        "DELETE /api/v1/settings/api-keys/{id} 删除 Key",
+        "Key 使用 Fernet 对称加密存储",
+        "只返回 Key 的后 4 位"
+      ],
+      "test_command": "python -m pytest tests/test_api_keys.py -v",
+      "priority": 38,
+      "passes": true
+    },
+    {
+      "id": "FEAT-039",
+      "category": "settings",
+      "title": "前端 - 设置页面（API Key 管理）",
+      "description": "实现设置页面，管理 OpenAI Key 和 SD WebUI 配置",
+      "acceptance_criteria": [
+        "API Key 输入框（密码模式）",
+        "Key 列表显示（脱敏）",
+        "添加/删除 Key 操作",
+        "SD WebUI 地址配置",
+        "连接测试按钮"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 39,
+      "passes": true
+    },
+    {
+      "id": "FEAT-040",
+      "category": "infrastructure",
+      "title": "日志系统 - 后端结构化日志",
+      "description": "配置后端日志系统，记录请求、错误和业务日志",
+      "acceptance_criteria": [
+        "使用 Python logging 模块",
+        "日志格式包含：时间、级别、模块、请求ID",
+        "日志输出到控制台和文件",
+        "日志文件按大小轮转",
+        "错误日志包含堆栈信息"
+      ],
+      "test_command": "python -c \"from app.core.logging import logger; logger.info('Test')\"",
+      "priority": 40,
+      "passes": true
+    },
+    {
+      "id": "FEAT-041",
+      "category": "infrastructure",
+      "title": "CORS 和静态文件服务配置",
+      "description": "配置 FastAPI CORS 中间件和静态文件服务",
+      "acceptance_criteria": [
+        "CORS 允许前端开发服务器域名",
+        "静态文件服务（上传文件、生成结果）",
+        "生产环境 CORS 限制为指定域名",
+        "文件上传大小限制可配置",
+        "静态文件路径安全校验"
+      ],
+      "test_command": "python -m pytest tests/test_cors.py -v",
+      "priority": 41,
+      "passes": true
+    },
+    {
+      "id": "FEAT-042",
+      "category": "infrastructure",
+      "title": "Alembic 数据库迁移管理",
+      "description": "配置 Alembic 管理数据库迁移",
+      "acceptance_criteria": [
+        "alembic init 初始化",
+        "alembic revision --autogenerate 自动生成迁移",
+        "alembic upgrade head 执行迁移",
+        "alembic downgrade 回滚迁移",
+        "迁移脚本版本控制"
+      ],
+      "test_command": "alembic upgrade head",
+      "priority": 42,
+      "passes": true
+    },
+    {
+      "id": "FEAT-043",
+      "category": "frontend_infra",
+      "title": "前端 - 路由和布局框架",
+      "description": "配置 React Router 和页面布局框架",
+      "acceptance_criteria": [
+        "React Router v6 路由配置",
+        "主布局：Header + Sidebar + Content",
+        "路由守卫（未登录跳转）",
+        "页面包含：登录/注册/仪表盘/项目详情/设置",
+        "Ant Design Layout 组件"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 43,
+      "passes": true
+    },
+    {
+      "id": "FEAT-044",
+      "category": "frontend_infra",
+      "title": "前端 - React Query 数据请求层",
+      "description": "配置 React Query，封装 API 请求 Hook",
+      "acceptance_criteria": [
+        "QueryClient 配置（缓存、重试、过期时间）",
+        "useProjects Hook（项目列表）",
+        "useProject Hook（项目详情）",
+        "useCreateProject Hook（创建项目）",
+        "useStartWorkflow Hook（启动工作流）"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 44,
+      "passes": true
+    },
+    {
+      "id": "FEAT-045",
+      "category": "frontend_infra",
+      "title": "前端 - 全局状态管理（Auth Store）",
+      "description": "使用 Zustand 管理全局认证状态",
+      "acceptance_criteria": [
+        "useAuthStore 管理登录状态和 token",
+        "登录/登出 action",
+        "token 持久化到 localStorage",
+        "自动 token 刷新",
+        "TypeScript 类型完整"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 45,
+      "passes": true
+    },
+    {
+      "id": "FEAT-046",
+      "category": "project",
+      "title": "项目管理 - 项目配置更新 API",
+      "description": "实现项目配置更新接口 PATCH /api/v1/projects/{id}/config",
+      "acceptance_criteria": [
+        "支持更新 TTS 配置（语音、语速）",
+        "支持更新图像配置（引擎、风格、参数）",
+        "支持更新视频配置（淡入淡出、字幕）",
+        "配置变更后清除已缓存的结果",
+        "配置校验（参数范围检查）"
+      ],
+      "test_command": "python -m pytest tests/test_project_config.py -v",
+      "priority": 46,
+      "passes": true
+    },
+    {
+      "id": "FEAT-047",
+      "category": "project",
+      "title": "前端 - 项目配置向导页面",
+      "description": "实现项目配置向导，引导用户完成 TTS/图像/视频配置",
+      "acceptance_criteria": [
+        "Steps 步骤条组件引导配置",
+        "Step 1: TTS 语音选择",
+        "Step 2: 图像生成配置",
+        "Step 3: 视频和字幕配置",
+        "配置完成后可启动工作流"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 47,
+      "passes": true
+    },
+    {
+      "id": "FEAT-048",
+      "category": "workflow",
+      "title": "工作流引擎 - 断点续传支持",
+      "description": "实现工作流断点续传，支持从失败步骤重新开始",
+      "acceptance_criteria": [
+        "工作流状态持久化到数据库",
+        "POST /api/v1/projects/{id}/resume 从断点继续",
+        "跳过已完成的步骤",
+        "从失败步骤重新执行",
+        "中间结果保留"
+      ],
+      "test_command": "python -m pytest tests/test_workflow_resume.py -v",
+      "priority": 48,
+      "passes": true
+    },
+    {
+      "id": "FEAT-049",
+      "category": "result",
+      "title": "结果展示 - 中间结果预览 API",
+      "description": "实现中间结果（音频、图片）预览接口",
+      "acceptance_criteria": [
+        "GET /api/v1/projects/{id}/audio/{segment_index} 获取段落音频",
+        "GET /api/v1/projects/{id}/images/{segment_index} 获取段落图片",
+        "GET /api/v1/projects/{id}/subtitles 获取字幕文件",
+        "支持缩略图生成",
+        "文件访问权限校验"
+      ],
+      "test_command": "python -m pytest tests/test_preview_api.py -v",
+      "priority": 49,
+      "passes": true
+    },
+    {
+      "id": "FEAT-050",
+      "category": "result",
+      "title": "前端 - 中间结果预览组件",
+      "description": "实现中间结果预览组件，展示每段的音频和图片",
+      "acceptance_criteria": [
+        "段落列表展示（文本+音频+图片）",
+        "音频播放器（内联播放）",
+        "图片缩略图（点击放大）",
+        "单段重新生成按钮",
+        "批量结果网格视图"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 50,
+      "passes": true
+    },
+    {
+      "id": "FEAT-051",
+      "category": "infrastructure",
+      "title": "测试框架 - 后端 pytest 配置",
+      "description": "配置后端测试框架，包括测试数据库和 fixtures",
+      "acceptance_criteria": [
+        "pytest-asyncio 配置",
+        "测试数据库使用 SQLite 内存模式",
+        "TestClient fixtures",
+        "数据库 session fixtures",
+        "认证 fixtures（获取测试 token）"
+      ],
+      "test_command": "python -m pytest tests/ -v --tb=short",
+      "priority": 51,
+      "passes": true
+    },
+    {
+      "id": "FEAT-052",
+      "category": "infrastructure",
+      "title": "测试框架 - 前端 Vitest 配置",
+      "description": "配置前端 Vitest 测试框架和 React Testing Library",
+      "acceptance_criteria": [
+        "Vitest 配置完成",
+        "React Testing Library 安装",
+        "MSW (Mock Service Worker) 配置",
+        "至少一个示例测试通过",
+        "npm run test 能运行测试"
+      ],
+      "test_command": "cd frontend && npm run test",
+      "priority": 52,
+      "passes": true
+    },
+    {
+      "id": "FEAT-053",
+      "category": "infrastructure",
+      "title": "Git 配置 - .gitignore 和代码规范",
+      "description": "配置 .gitignore、ESLint、Prettier、Black、isort",
+      "acceptance_criteria": [
+        ".gitignore 包含 node_modules, __pycache__, .env, dist/ 等",
+        "ESLint + Prettier 配置（前端）",
+        "Black + isort 配置（后端）",
+        "pre-commit hooks 配置",
+        "EditorConfig 配置"
+      ],
+      "test_command": "git status",
+      "priority": 53,
+      "passes": true
+    },
+    {
+      "id": "FEAT-054",
+      "category": "frontend_infra",
+      "title": "前端 - 主题和国际化基础",
+      "description": "配置 Ant Design 主题定制和 i18n 基础框架",
+      "acceptance_criteria": [
+        "Ant Design 主题令牌配置（品牌色、圆角等）",
+        "暗色模式支持",
+        "i18n 框架搭建（react-i18next）",
+        "中文语言包",
+        "语言切换功能"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 54,
+      "passes": true
+    },
+    {
+      "id": "FEAT-055",
+      "category": "project",
+      "title": "项目管理 - 项目状态查询 API",
+      "description": "实现项目状态查询接口，返回工作流各步骤详细状态",
+      "acceptance_criteria": [
+        "GET /api/v1/projects/{id}/status 返回各步骤状态",
+        "包含：步骤名称、状态、进度百分比、错误信息",
+        "包含：已用时间、预估剩余时间",
+        "包含：当前步骤详情",
+        "轮询间隔建议 2s"
+      ],
+      "test_command": "python -m pytest tests/test_project_status.py -v",
+      "priority": 55,
+      "passes": true
+    },
+    {
+      "id": "FEAT-056",
+      "category": "workflow",
+      "title": "工作流引擎 - 错误处理和重试策略",
+      "description": "实现工作流错误处理和自动重试策略",
+      "acceptance_criteria": [
+        "步骤失败自动重试（最多 3 次）",
+        "重试间隔递增（1s, 3s, 5s）",
+        "最终失败标记项目为 failed",
+        "错误信息记录到数据库",
+        "支持手动重试单个步骤"
+      ],
+      "test_command": "python -m pytest tests/test_workflow_retry.py -v",
+      "priority": 56,
+      "passes": true
+    },
+    {
+      "id": "FEAT-057",
+      "category": "settings",
+      "title": "系统设置 - 全局配置 API",
+      "description": "实现系统全局配置接口",
+      "acceptance_criteria": [
+        "GET /api/v1/settings 返回当前用户配置",
+        "PATCH /api/v1/settings 更新配置",
+        "默认分段参数配置",
+        "默认 TTS/图像/视频参数配置",
+        "通知偏好配置"
+      ],
+      "test_command": "python -m pytest tests/test_settings_api.py -v",
+      "priority": 57,
+      "passes": true
+    },
+    {
+      "id": "FEAT-058",
+      "category": "frontend_infra",
+      "title": "前端 - 通知和消息提示系统",
+      "description": "实现全局通知系统，处理成功/错误/进度通知",
+      "acceptance_criteria": [
+        "Ant Design message 全局提示",
+        "Ant Design notification 通知",
+        "工作流完成通知",
+        "工作流失败通知",
+        "通知自动消失和手动关闭"
+      ],
+      "test_command": "cd frontend && npm run build",
+      "priority": 58,
+      "passes": true
+    },
+    {
+      "id": "FEAT-059",
+      "category": "result",
+      "title": "结果展示 - 批量导出 API",
+      "description": "实现批量导出接口，支持打包下载所有产出文件",
+      "acceptance_criteria": [
+        "POST /api/v1/projects/{id}/export 创建导出任务",
+        "支持选择导出内容（视频/音频/图片/字幕）",
+        "ZIP 打包下载",
+        "导出进度追踪",
+        "GET /api/v1/projects/{id}/export/{export_id}/download"
+      ],
+      "test_command": "python -m pytest tests/test_export_api.py -v",
+      "priority": 59,
+      "passes": true
+    },
+    {
+      "id": "FEAT-060",
+      "category": "infrastructure",
+      "title": "生产部署 - Nginx 反向代理配置",
+      "description": "配置 Nginx 反向代理，统一前后端访问入口",
+      "acceptance_criteria": [
+        "Nginx 配置文件",
+        "/api 路径代理到 FastAPI",
+        "/ 路径代理到前端静态文件",
+        "/ws 路径支持 WebSocket 代理",
+        "文件上传大小限制配置"
+      ],
+      "test_command": "nginx -t -c nginx.conf",
+      "priority": 60,
+      "passes": true
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "delete": "Delete",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "loading": "Loading...",
+    "success": "Success",
+    "error": "Error",
+    "retry": "Retry",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout",
+    "username": "Username",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "forgotPassword": "Forgot Password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "loginSuccess": "Login successful",
+    "registerSuccess": "Registration successful"
+  },
+  "navigation": {
+    "home": "Home",
+    "projects": "Projects",
+    "settings": "Settings",
+    "logout": "Logout"
+  },
+  "project": {
+    "create": "Create Project",
+    "list": "Project List",
+    "name": "Project Name",
+    "upload": "Upload File",
+    "uploadPlaceholder": "Click or drag to upload TXT file",
+    "empty": "No projects yet",
+    "deleteConfirm": "Are you sure you want to delete this project?",
+    "status": {
+      "pending": "Pending",
+      "processing": "Processing",
+      "completed": "Completed",
+      "failed": "Failed"
+    }
+  },
+  "notification": {
+    "workflow": {
+      "success": "Workflow Complete",
+      "successDesc": "Project \"{name}\" has been processed successfully!",
+      "error": "Workflow Failed",
+      "errorDesc": "Project \"{name}\" failed to process. Please retry.",
+      "processing": "Processing: {step}"
+    },
+    "common": {
+      "success": "Success",
+      "error": "Error",
+      "warning": "Warning",
+      "info": "Info"
+    }
+  }
+}
